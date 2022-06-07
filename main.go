@@ -5,6 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 //Display the home page to the user
@@ -37,7 +40,7 @@ func catchAllHandler(res http.ResponseWriter, req *http.Request) {
 	res.Write([]byte(`Ooopss....This REST Endpoint doesnot exists.`))
 }
 
-func apiRequests() {
+func apiRequests(kD *kubernetes.Clientset) {
 	//routers for the application
 	router := mux.NewRouter().StrictSlash(true)
 
@@ -51,8 +54,30 @@ func apiRequests() {
 	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
+func getKubeData() *kubernetes.Clientset {
+	// path-to-kubeconfig -- for example, /root/.kube/config
+	config, err := clientcmd.BuildConfigFromFlags("", "C:/Users/ankit/.kube/config")
+
+	if err != nil {
+		log.Println("Unable to find config file.")
+	} else {
+		// creates the clientset
+		clientset, _ := kubernetes.NewForConfig(config)
+		return clientset
+	}
+	return nil
+}
+
 func main() {
 	log.Println("apiKube Application Started.")
-	apiRequests()
+
+	kD := getKubeData()
+	if kD != nil {
+		log.Println("Connected to Kubernetes Cluster and data obtained.")
+		apiRequests(kD)
+	} else {
+		log.Println("Unable to connect to Kubernetes Cluster.")
+	}
+
 	log.Println("apiKube Application Stopped.")
 }
