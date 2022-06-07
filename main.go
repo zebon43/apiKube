@@ -8,17 +8,35 @@ import (
 )
 
 //Display the home page to the user
-func homePage(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.Method, " | Home Page is requested.")
+func apiHomePage(res http.ResponseWriter, req *http.Request) {
+	log.Println(req.Method, " | API Home Page is requested.")
+	res.WriteHeader(http.StatusOK)
+	res.Write([]byte(`This is the API for Kubernetes.`))
 }
 
-func handleRequests() {
+//GET request to display number of Pods
+func services(res http.ResponseWriter, req *http.Request) {
+	log.Println(req.Method, " | Number of Pods is requested.")
+}
+
+//GET request to display number of Pods per Application Group
+func appGrp(res http.ResponseWriter, req *http.Request) {
+	log.Println(req.Method, " | Number of Pods per Application Group is requested.")
+
+	//GET Paramter from URL
+	params := mux.Vars(req)
+	grpName := params["applicationGroup"]
+
+	log.Println(grpName)
+}
+
+func apiRequests() {
+	//routers for the application
 	router := mux.NewRouter().StrictSlash(true)
 
-	//routers for the application
-	router.HandleFunc("/", homePage)
-	//router.HandleFunc("/services", "services")
-	//router.HandleFunc("/services/{applicationGroup}", "AppGrp")
+	router.HandleFunc("/api/v1", apiHomePage)
+	router.HandleFunc("/api/v1/services", services)
+	router.HandleFunc("/api/v1/services/{applicationGroup}", appGrp)
 
 	//Log in case there is an error while the service is running
 	log.Fatal(http.ListenAndServe(":8000", router))
@@ -26,6 +44,6 @@ func handleRequests() {
 
 func main() {
 	log.Println("apiKube Application Started.")
-	handleRequests()
+	apiRequests()
 	log.Println("apiKube Application Stopped.")
 }
