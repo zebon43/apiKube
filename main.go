@@ -30,6 +30,13 @@ func appGrp(res http.ResponseWriter, req *http.Request) {
 	log.Println(grpName)
 }
 
+//Default catch all rule
+func catchAllHandler(res http.ResponseWriter, req *http.Request) {
+	log.Println(req.Method, " | REST Service not Available.")
+	res.WriteHeader(http.StatusBadRequest)
+	res.Write([]byte(`Ooopss....This REST Endpoint doesnot exists.`))
+}
+
 func apiRequests() {
 	//routers for the application
 	router := mux.NewRouter().StrictSlash(true)
@@ -37,6 +44,8 @@ func apiRequests() {
 	router.HandleFunc("/api/v1", apiHomePage)
 	router.HandleFunc("/api/v1/services", services)
 	router.HandleFunc("/api/v1/services/{applicationGroup}", appGrp)
+
+	router.PathPrefix("/").HandlerFunc(catchAllHandler)
 
 	//Log in case there is an error while the service is running
 	log.Fatal(http.ListenAndServe(":8000", router))
