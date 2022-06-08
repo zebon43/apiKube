@@ -81,10 +81,7 @@ func apiRequests() {
 
 func getPodData(grpName string) ([]podCount, error) {
 
-	var pc []podCount
 	var listFilter v1.ListOptions
-	addFlag := true
-
 	//Set List Options
 	if grpName != "" {
 		listFilter = v1.ListOptions{LabelSelector: "applicationGroup=" + grpName}
@@ -102,6 +99,8 @@ func getPodData(grpName string) ([]podCount, error) {
 
 	pods, err := kD.CoreV1().Pods("default").List(context.TODO(), listFilter)
 
+	var pc []podCount
+	addFlag := true
 	//Check for invalid data in URL
 	if err != nil {
 		log.Fatalln("Unable to connect to Kubernetes. Terminating the Application.", err)
@@ -134,7 +133,7 @@ func main() {
 	Config, err = clientcmd.BuildConfigFromFlags("", "C:/Users/ankit/.kube/config")
 	if err != nil {
 		log.Println(err)
-		log.Fatalln("Unable to find config file. Terminating the Application.", err)
+		log.Fatalln("Unable to find config file. Terminating the Application.")
 	} else {
 		apiRequests()
 	}
