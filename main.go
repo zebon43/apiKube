@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -27,7 +28,10 @@ type podCount struct {
 func apiHomePage(res http.ResponseWriter, req *http.Request) {
 	log.Println(req.Method, "| API Home Page is requested.")
 	res.WriteHeader(http.StatusOK)
-	res.Write([]byte(`This is the API for Kubernetes.`))
+	res.Write([]byte(`This is the API for Kubernetes. Below are the available REST Endpoints.
+	1. /api/v1 - Homepage.
+	2. /api/v1/services - An endpoint that exposes the number of pods running in the cluster in namespace "default" per service and per application group.
+	3. /api/v1/services/{applicationgroup}/ - An endpoint that exposes the pods in the cluster in namespace "default" that are part of the same applicationGroup`))
 }
 
 //GET request to display number of Pods
@@ -60,7 +64,7 @@ func appGrp(res http.ResponseWriter, req *http.Request) {
 }
 
 //Default catch all rule
-func catchAllHandler(res http.ResponseWriter, req *http.Request) {
+func invalidEndPoint(res http.ResponseWriter, req *http.Request) {
 	log.Println(req.Method, "| REST Service not Available.")
 	res.WriteHeader(http.StatusBadRequest)
 	res.Write([]byte(`Ooopss....This REST Endpoint doesnot exists.`))
@@ -68,12 +72,12 @@ func catchAllHandler(res http.ResponseWriter, req *http.Request) {
 
 func apiRequests() {
 	//routers for the application
-	router := mux.NewRouter().StrictSlash(true)
+	router := mux.NewRouter().PathPrefix("/api/v1").Subrouter().StrictSlash(true)
 
-	router.HandleFunc("/api/v1", apiHomePage)
-	router.HandleFunc("/api/v1/services", services)
-	router.HandleFunc("/api/v1/services/{applicationGroup}", appGrp)
-	router.PathPrefix("/").HandlerFunc(catchAllHandler)
+	router.HandleFunc("/", apiHomePage).Methods("GET")
+	router.HandleFunc("/services", services).Methods("GET")
+	router.HandleFunc("/services/{applicationGroup}", appGrp).Methods("GET")
+	router.NotFoundHandler = http.HandlerFunc(invalidEndPoint)
 
 	//Log in case there is an error while the service is running
 	log.Fatal("User has terminated the Application.", http.ListenAndServe(":8000", router))
@@ -128,13 +132,20 @@ func getPodData(grpName string) ([]podCount, error) {
 func main() {
 	log.Println("apiKube Application Started.")
 
+	//Get the config file from the user
+	var filePath string
+	fmt.Println("Enter the config file path(Windows E.g. C:/Users/<User_Name>/.kube/config)")
+	fmt.Scanln(&filePath)
+	log.Println("The path of the file entered is " + filePath)
+
 	// path-to-kubeconfig -- for example, /root/.kube/config
 	var err error
-	Config, err = clientcmd.BuildConfigFromFlags("", "C:/Users/ankit/.kube/config")
+	Config, err = clientcmd.BuildConfigFromFlags("", filePath)
 	if err != nil {
 		log.Println(err)
 		log.Fatalln("Unable to find config file. Terminating the Application.")
 	} else {
+		log.Println("Build Configuration from config file was successful.")
 		apiRequests()
 	}
 
